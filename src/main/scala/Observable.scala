@@ -6,9 +6,11 @@ trait Observable[T] {
 
   def observe(observer: Observer[T]): Unit = observers += observer;
 
-  def notifyObservers(data: T): Unit = {
-    for (o <- observers) {
-      o.next(data)
-    }
-  }
+  def notifyObservers(data: T): Unit = observers.foreach(o => o.next(data))
+
+  //    for (o <- observers) {
+  //      o.next(data)
+  //    }
+
+
 }
