@@ -1,28 +1,33 @@
+import RxAvansOO._
+
 object Main extends App {
 
-//  val pg = new PersonGenerator("https://randomuser.me/api/?format=csv&results=10&inc=name,nat,email")
-//
-//  val logger = new Logger[String]()
-//  pg.observe(logger)
-//
-//  val misterFilter = new StringFilter("Mr")
-//  logger.observe(misterFilter)
-//
-//  val missFilter = new StringFilter("Miss")
-//  logger.observe(missFilter)
-//
-//  val misterExtractor = new NameExtractor()
-//  misterFilter.observe(misterExtractor);
-//
-//  val missExtractor = new NameExtractor()
-//  missFilter.observe(missExtractor);
-//
-//  val misterPrint = new Printer("mister")
-//  misterExtractor.observe(misterPrint)
-//
-//  val missPrint = new Printer("miss")
-//  missExtractor.observe(missPrint)
-//
-//  pg.trigger();
+  val url = "https://randomuser.me/api?format=csv&result=20&inc=name,nat,email"
 
+  val randomData: Observable[Option[String]] = (observer: Option[String] => Unit) => {
+    println("Fetching...")
+    io.Source.fromURL(url).getLines().drop(1).foreach(person => if (math.random() > 0.25) observer(Some(person)) else observer(None))
+  }
+
+  val loggedData = log(randomData);
+
+  val someFiltered = filter(loggedData, (opt: Option[String]) => opt match {
+    case Some(_) => true
+    case _ => false
+  })
+
+  val someExtracted = map(someFiltered, (opt: Option[String]) => opt.get)
+
+  val splitter = fork(someExtracted)
+
+  val mister = filter(splitter, (entry: String) => entry.contains("Mr"))
+  val miss = filter(splitter, (entry: String) => entry.contains("Miss"))
+
+  val getFirstName: String => String = _.split(",")(1)
+
+  val misterFirst = map(mister, getFirstName)
+  val missFirst = map(miss, getFirstName)
+
+  misterFirst(value => println("mister " + value))
+  missFirst(value => println("miss " + value))
 }
